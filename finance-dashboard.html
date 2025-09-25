@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Dashboard - Net Worth Calculator & Financial Planner</title>
+    <meta name="description" content="Professional finance dashboard for net worth calculation, financial planning, and wealth projection. Track your income, expenses, investments, and loans." />
+    <meta name="author" content="Finance Dashboard" />
+    <meta name="keywords" content="finance, net worth, calculator, financial planning, wealth tracker, investment tracker" />
+    
+    <meta property="og:title" content="Finance Dashboard - Net Worth Calculator" />
+    <meta property="og:description" content="Professional finance dashboard for net worth calculation and financial planning" />
+    <meta property="og:type" content="website" />
+    
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Finance Dashboard - Net Worth Calculator" />
+    <meta name="twitter:description" content="Professional finance dashboard for net worth calculation and financial planning" />
+    
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.24/dist/full.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        html {
+            overflow-x: hidden; /* hard-stop any horizontal overflow */
+        }
+        /* Custom CSS Variables for Premium Finance Theme */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #06B6D4 100%);
+            --secondary-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            --accent-gradient: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-glow: 0 0 40px rgba(59, 130, 246, 0.3);
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-spring: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Base Styling */
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
+            min-height: 100vh;
+            color: #F1F5F9;
+            font-feature-settings: "cv11", "ss01";
+            font-variation-settings: "opsz" 32;
+            overflow-x: hidden; /* prevent horizontal scroll from oversized canvases */
+        }
+
+        /* Glass Morphism Effects */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition-smooth);
+            max-width: 100%;
+            overflow: hidden; /* avoid content pushing layout horizontally */
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow), var(--shadow-soft);
+        }
+
+        /* Premium Gradients */
+        .gradient-primary {
+            background: var(--primary-gradient);
+        }
+
+        .gradient-secondary {
+            background: var(--secondary-gradient);
+        }
+
+        .gradient-accent {
+            background: var(--accent-gradient);
+        }
+
+        .gradient-text {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Enhanced Buttons */
+        .btn-premium {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: var(--transition-spring);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-premium:hover::before {
+            left: 100%;
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Form Enhancements */
+        .input-premium {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #F1F5F9;
+            transition: var(--transition-smooth);
+        }
+
+        .input-premium:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            transform: scale(1.02);
+        }
+
+        .input-premium::placeholder {
+            color: #94A3B8;
+        }
+
+        /* Chart Animations */
+        .chart-container {
+            animation: fadeInUp 0.6s ease-out;
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden; /* contain any overflow from chartjs sizing */
+            contain: content; /* isolate layout/paint to prevent external overflow */
+        }
+
+        /* Ensure canvases never overflow their parents */
+        .chart-container canvas {
+            display: block;
+            width: 100% !important;
+            max-width: 100%;
+            height: auto !important; /* let Chart.js set height via aspect ratio */
+            max-height: 420px; /* safety cap to avoid runaway heights */
+            box-sizing: border-box;
+        }
+
+        /* Prevent grid children from causing horizontal overflow */
+        main.grid, .grid {
+            min-width: 0;
+        }
+        .grid > * {
+            min-width: 0;
+        }
+        main > section {
+            min-width: 0;
+            overflow-x: hidden; /* chart cards cannot push sections horizontally */
+        }
+
+        /* Hard clamp for chart cards so they never expand the layout */
+        .glass-card.chart-container,
+        .chart-container {
+            inline-size: 100%;
+            max-inline-size: 100%;
+            overflow-x: clip;
+        }
+        .chart-container *,
+        .glass-card.chart-container * {
+            max-inline-size: 100%;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-left: 2px solid #3B82F6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Financial Value Styling */
+        .financial-value {
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Enhanced Collapse Sections */
+        .collapse-premium {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            transition: var(--transition-smooth);
+        }
+
+        .collapse-premium:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Status Indicators */
+        .status-positive {
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        .status-negative {
+            color: #EF4444;
+            font-weight: 600;
+        }
+
+        .status-neutral {
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gradient);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+        }
+
+        /* Purchase/Loan Cards */
+        .purchase-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: var(--transition-smooth);
+        }
+
+        .purchase-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Header Enhancement */
+        .header-premium {
+            background: var(--primary-gradient);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .glass-card {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+            
+            .btn-premium {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Dark theme adjustments for DaisyUI */
+        [data-theme="dark"] .input-premium,
+        [data-theme="dark"] .select-premium,
+        [data-theme="dark"] .textarea-premium {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #F1F5F9;
+        }
+
+        /* Enhanced Select */
+        .select-premium {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #F1F5F9;
+            transition: var(--transition-smooth);
+        }
+
+        .select-premium:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Alert/Toast Styling */
+        .alert-premium {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <header class="w-full header-premium py-8 px-4 flex flex-col md:flex-row items-center justify-between shadow-2xl relative z-10">
+        <h1 class="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-2xl gradient-text">
+            💰 Finance Dashboard
+        </h1>
+        <div class="flex gap-6 mt-6 md:mt-0">
+            <div class="glass-card px-6 py-4 rounded-2xl shadow-2xl flex flex-col items-center hover:scale-105 transition-transform duration-300">
+                <span class="text-white/80 text-sm font-medium uppercase tracking-wider mb-1">Current Net Worth</span>
+                <span id="navCurrentNetWorth" class="text-3xl font-black text-white financial-value">$0</span>
+            </div>
+            <div class="glass-card px-6 py-4 rounded-2xl shadow-2xl flex flex-col items-center hover:scale-105 transition-transform duration-300">
+                <span class="text-white/80 text-sm font-medium uppercase tracking-wider mb-1">Projected Net Worth</span>
+                <span id="navProjectedNetWorth" class="text-3xl font-black text-white financial-value">$0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="w-full max-w-7xl mx-auto px-4 md:px-6 py-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Input Section -->
+        <section class="col-span-1 space-y-6">
+            <div class="glass-card rounded-3xl shadow-2xl p-8">
+                <form id="projectionForm" class="space-y-6">
+                    <!-- Balances Section -->
+                    <div class="collapse collapse-premium collapse-arrow">
+                        <input type="checkbox" class="peer" checked />
+                        <div class="collapse-title text-2xl font-bold flex items-center gap-3">
+                            💳 <span class="gradient-text">Account Balances</span>
+                        </div>
+                        <div class="collapse-content">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">💰 Checking Account</span>
+                                    </label>
+                                    <input type="number" name="checking_balance" id="checking_balance" placeholder="Enter checking balance" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🏦 Savings Account</span>
+                                    </label>
+                                    <input type="number" name="savings_balance" id="savings_balance" placeholder="Enter savings balance" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">📈 Stock Investments</span>
+                                    </label>
+                                    <input type="number" name="stocks_balance" id="stocks_balance" placeholder="Enter stocks value" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🏥 HSA Balance</span>
+                                    </label>
+                                    <input type="number" name="hsa_balance" id="hsa_balance" placeholder="Enter HSA balance" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🎯 IRA/401k</span>
+                                    </label>
+                                    <input type="number" name="ira_balance" id="ira_balance" placeholder="Enter retirement balance" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">💎 Other Assets</span>
+                                    </label>
+                                    <input type="number" name="others_balance" id="others_balance" placeholder="Enter other assets" class="input input-premium" required />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Major Purchases Section -->
+                    <div class="collapse collapse-premium collapse-arrow">
+                        <input type="checkbox" class="peer" checked />
+                        <div class="collapse-title text-2xl font-bold flex items-center gap-3">
+                            🏠 <span class="gradient-text">Major Purchases & Loans</span>
+                        </div>
+                        <div class="collapse-content">
+                            <div class="space-y-4 pt-4">
+                                <div id="purchaseFields"></div>
+                                <button type="button" class="btn btn-premium w-full py-3 text-lg font-bold" onclick="addPurchaseJS()">
+                                    ➕ Add Purchase/Loan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Income & Allocation Section -->
+                    <div class="collapse collapse-premium collapse-arrow">
+                        <input type="checkbox" class="peer" checked />
+                        <div class="collapse-title text-2xl font-bold flex items-center gap-3">
+                            💼 <span class="gradient-text">Income & Allocation</span>
+                        </div>
+                        <div class="collapse-content">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">💰 Annual Salary</span>
+                                    </label>
+                                    <input type="number" name="annual_salary" id="annual_salary" placeholder="Enter annual salary" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">💎 Other Income (Annual)</span>
+                                    </label>
+                                    <input type="number" name="other_income" id="other_income" placeholder="Enter other income" class="input input-premium" />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">📊 After-Tax Fraction</span>
+                                    </label>
+                                    <input type="number" name="salary_after_tax_fraction" id="salary_after_tax_fraction" min="0" max="1" step="0.01" placeholder="0.75 = 75%" class="input input-premium" required />
+                                    <div class="label">
+                                        <span class="label-text-alt status-positive">After-tax: <span id="afterTaxAmount">$0</span></span>
+                                    </div>
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">💸 Expense Percentage</span>
+                                    </label>
+                                    <input type="number" name="expense_percentage" id="expense_percentage" min="0" max="100" step="0.1" placeholder="% of after-tax income" class="input input-premium" required />
+                                    <div class="label">
+                                        <span class="label-text-alt status-negative">Monthly expense: <span id="expenseAmount">$0</span></span>
+                                    </div>
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">📈 Annual Salary Raise (%)</span>
+                                    </label>
+                                    <input type="number" name="salary_raise_percent" id="salary_raise_percent" min="0" max="100" step="0.01" placeholder="3% = 3" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🎯 % to IRA/401k</span>
+                                    </label>
+                                    <input type="number" name="allocation_ira" id="allocation_ira" min="0" max="100" step="0.1" placeholder="% of leftover income" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🏥 Monthly HSA ($)</span>
+                                    </label>
+                                    <input type="number" name="allocation_hsa_fixed" id="allocation_hsa_fixed" min="0" step="0.01" placeholder="Fixed monthly amount" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">💳 % to Checking</span>
+                                    </label>
+                                    <input type="number" name="allocation_checking" id="allocation_checking" min="0" max="100" step="0.1" placeholder="% of leftover income" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🏦 % to Savings</span>
+                                    </label>
+                                    <input type="number" name="allocation_savings" id="allocation_savings" min="0" max="100" step="0.1" placeholder="% of leftover income" class="input input-premium" required />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">📈 % to Stocks</span>
+                                    </label>
+                                    <input type="number" name="allocation_stocks" id="allocation_stocks" min="0" max="100" step="0.1" placeholder="% of leftover income" class="input input-premium" required />
+                                </div>
+                            </div>
+                            <div class="form-control mt-6">
+                                <label class="cursor-pointer label justify-start gap-3">
+                                    <input type="checkbox" name="exclude_major_purchases" id="exclude_major_purchases" class="checkbox checkbox-primary" value="1">
+                                    <span class="label-text text-white/80 font-medium">🔮 What-if Scenario (Exclude Major Purchases)</span>
+                                </label>
+                            </div>
+                            <div class="alert alert-premium mt-4">
+                                <span class="text-white/80">💡 Unallocated funds: <span id="unallocatedAmount" class="financial-value status-neutral">$0</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Growth Rates -->
+                    <div class="collapse collapse-premium collapse-arrow">
+                        <input type="checkbox" class="peer" checked />
+                        <div class="collapse-title text-2xl font-bold flex items-center gap-3">
+                            📈 <span class="gradient-text">Growth Rates</span>
+                        </div>
+                        <div class="collapse-content">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🏦 Savings APY (%)</span>
+                                    </label>
+                                    <input type="number" name="savings_rate_percent" id="savings_rate_percent" min="0" max="100" step="0.01" placeholder="e.g., 4.5" class="input input-premium" />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">💳 Checking APY (%)</span>
+                                    </label>
+                                    <input type="number" name="checking_rate_percent" id="checking_rate_percent" min="0" max="100" step="0.01" placeholder="e.g., 1.0" class="input input-premium" />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🏥 HSA Return (%)</span>
+                                    </label>
+                                    <input type="number" name="hsa_return_percent" id="hsa_return_percent" min="0" max="100" step="0.01" placeholder="e.g., 7.0" class="input input-premium" />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🎯 IRA/401k Return (%)</span>
+                                    </label>
+                                    <input type="number" name="ira_return_percent" id="ira_return_percent" min="0" max="100" step="0.01" placeholder="e.g., 9.0" class="input input-premium" />
+                                </div>
+                                <div class="form-control md:col-span-2">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">📈 Stocks Return (%)</span>
+                                    </label>
+                                    <input type="number" name="stocks_return_percent" id="stocks_return_percent" min="0" max="100" step="0.01" placeholder="e.g., 10.0" class="input input-premium" />
+                                </div>
+                                <div class="form-control md:col-span-2">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">💎 Other Assets Return (%)</span>
+                                    </label>
+                                    <input type="number" name="others_return_percent" id="others_return_percent" min="0" max="100" step="0.01" placeholder="e.g., 0.0" class="input input-premium" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employer Contributions -->
+                    <div class="collapse collapse-premium collapse-arrow">
+                        <input type="checkbox" class="peer" checked />
+                        <div class="collapse-title text-2xl font-bold flex items-center gap-3">
+                            🤝 <span class="gradient-text">Employer Contributions</span>
+                        </div>
+                        <div class="collapse-content">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🏥 Employer HSA (Monthly $)</span>
+                                    </label>
+                                    <input type="number" name="employer_hsa_monthly" id="employer_hsa_monthly" min="0" step="0.01" placeholder="e.g., 50" class="input input-premium" />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">🎯 Employer IRA Match (% of gross)</span>
+                                    </label>
+                                    <input type="number" name="employer_ira_percent" id="employer_ira_percent" min="0" max="100" step="0.01" placeholder="e.g., 3.0" class="input input-premium" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Projection Settings -->
+                    <div class="collapse collapse-premium collapse-arrow">
+                        <input type="checkbox" class="peer" checked />
+                        <div class="collapse-title text-2xl font-bold flex items-center gap-3">
+                            ⚙️ <span class="gradient-text">Projection Settings</span>
+                        </div>
+                        <div class="collapse-content">
+                            <div class="pt-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">📅 Months to Project</span>
+                                    </label>
+                                    <input type="number" name="months" min="1" placeholder="60 months = 5 years" class="input input-premium" value="60" required />
+                                </div>
+                                <div class="form-control mt-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/80 font-medium">📉 Annual Inflation Rate (%)</span>
+                                    </label>
+                                    <input type="number" name="inflation_rate_percent" id="inflation_rate_percent" min="0" max="100" step="0.01" placeholder="e.g., 3.0" class="input input-premium" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-premium w-full py-4 text-xl font-bold mt-8 relative overflow-hidden">
+                        <span class="relative z-10">🚀 Calculate Financial Projection</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="col-span-1 space-y-8">
+            <div class="glass-card rounded-3xl shadow-2xl p-8 chart-container">
+                <h3 class="text-2xl font-bold gradient-text mb-6 flex items-center gap-3">
+                    📊 Net Worth Growth
+                </h3>
+                <canvas id="chartNetWorth" class="w-full"></canvas>
+            </div>
+            
+            <div class="glass-card rounded-3xl shadow-2xl p-8 chart-container">
+                <h3 class="text-2xl font-bold gradient-text mb-6 flex items-center gap-3">
+                    💰 Account Breakdown
+                </h3>
+                <canvas id="chartBreakdown" class="w-full"></canvas>
+            </div>
+            
+            <div class="glass-card rounded-3xl shadow-2xl p-8 chart-container">
+                <h3 class="text-2xl font-bold gradient-text mb-6 flex items-center gap-3">
+                    🏦 Loan Balances
+                </h3>
+                <canvas id="chartLoans" class="w-full"></canvas>
+            </div>
+            
+            <div class="glass-card rounded-3xl shadow-2xl p-8 chart-container">
+                <h3 class="text-2xl font-bold gradient-text mb-6 flex items-center gap-3">
+                    💸 Monthly Cash Flow
+                </h3>
+                <canvas id="chartCashFlow" class="w-full"></canvas>
+            </div>
+
+            <div class="glass-card rounded-3xl shadow-2xl p-8 chart-container">
+                <h3 class="text-2xl font-bold gradient-text mb-6 flex items-center gap-3">
+                    👥 Contributions (Employee vs Employer)
+                </h3>
+                <canvas id="chartContrib" class="w-full"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    // --- Enhanced Persistence helpers with notifications ---
+    const FORM_STORAGE_KEY = 'networthFormValues';
+    const PURCHASES_STORAGE_KEY = 'networthPurchases';
+
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-premium fixed top-4 right-4 w-auto max-w-md z-50 ${type === 'success' ? 'alert-success' : type === 'error' ? 'alert-error' : 'alert-info'}`;
+        toast.innerHTML = `<span>${message}</span>`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    function saveFormToStorage() {
+        const form = document.getElementById('projectionForm');
+        const data = {};
+        Array.from(form.elements).forEach(el => {
+            if (el.name && !el.name.startsWith('purchase_')) {
+                if (el.type === 'checkbox') {
+                    data[el.name] = el.checked ? 1 : 0;
+                } else {
+                    data[el.name] = el.value;
+                }
+            }
+        });
+        localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function savePurchasesToStorage() {
+        const purchases = [];
+        for (let i = 1; i <= purchaseCount; i++) {
+            const form = document.getElementById('projectionForm');
+            const name = form[`purchase_name_${i}`]?.value;
+            const amount = form[`purchase_amount_${i}`]?.value;
+            const type = form[`purchase_type_${i}`]?.value;
+            const downpayment = form[`purchase_downpayment_${i}`]?.value;
+            const rate = form[`purchase_rate_${i}`]?.value;
+            const term = form[`purchase_term_${i}`]?.value;
+            const month = form[`purchase_month_${i}`]?.value;
+            if (name || amount || type || downpayment || rate || term || month) {
+                purchases.push({ name, amount, type, downpayment, rate, term, month });
+            }
+        }
+        localStorage.setItem(PURCHASES_STORAGE_KEY, JSON.stringify(purchases));
+    }
+
+    function loadFormFromStorage() {
+        const data = JSON.parse(localStorage.getItem(FORM_STORAGE_KEY) || '{}');
+        Object.entries(data).forEach(([key, value]) => {
+            const el = document.getElementsByName(key)[0];
+            if (el) {
+                if (el.type === 'checkbox') {
+                    el.checked = value == 1;
+                } else {
+                    el.value = value;
+                }
+            }
+        });
+    }
+
+    function loadPurchasesFromStorage() {
+        const purchases = JSON.parse(localStorage.getItem(PURCHASES_STORAGE_KEY) || '[]');
+        purchaseCount = 0;
+        document.getElementById('purchaseFields').innerHTML = '';
+        purchases.forEach(p => {
+            addPurchaseJS();
+            const idx = purchaseCount;
+            const form = document.getElementById('projectionForm');
+            form[`purchase_name_${idx}`].value = p.name || '';
+            form[`purchase_amount_${idx}`].value = p.amount || '';
+            form[`purchase_type_${idx}`].value = p.type || 'cash';
+            form[`purchase_downpayment_${idx}`].value = p.downpayment || '';
+            form[`purchase_rate_${idx}`].value = p.rate || '';
+            form[`purchase_term_${idx}`].value = p.term || '';
+            form[`purchase_month_${idx}`].value = p.month || '';
+            form[`purchase_type_${idx}`].dispatchEvent(new Event('change'));
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadFormFromStorage();
+        loadPurchasesFromStorage();
+        updateSalaryExpenseFeedback();
+        showToast('💾 Data loaded from previous session', 'success');
+    });
+
+    // Enhanced save with debouncing
+    let saveTimeout;
+    document.getElementById('projectionForm').addEventListener('input', () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            saveFormToStorage();
+            savePurchasesToStorage();
+        }, 500);
+    });
+
+    // Enhanced real-time feedback
+    function updateSalaryExpenseFeedback() {
+        const salary = parseFloat(document.getElementById('annual_salary').value) || 0;
+        const afterTaxFrac = parseFloat(document.getElementById('salary_after_tax_fraction').value) || 0;
+        const expensePerc = parseFloat(document.getElementById('expense_percentage').value) || 0;
+        const afterTax = salary * afterTaxFrac;
+        const monthlyExpense = afterTax * (expensePerc / 100) / 12;
+        const monthlySurplus = (afterTax / 12) - monthlyExpense;
+        
+        document.getElementById('afterTaxAmount').textContent = `$${afterTax.toLocaleString()}`;
+        document.getElementById('expenseAmount').textContent = `$${monthlyExpense.toLocaleString()}`;
+        
+        // Allocation feedback
+        const allocChecking = parseFloat(document.getElementById('allocation_checking').value) || 0;
+        const allocSavings = parseFloat(document.getElementById('allocation_savings').value) || 0;
+        const allocStocks = parseFloat(document.getElementById('allocation_stocks').value) || 0;
+        const allocIRA = parseFloat(document.getElementById('allocation_ira').value) || 0;
+        const allocHSA = parseFloat(document.getElementById('allocation_hsa_fixed').value) || 0;
+        
+        const allocPercTotal = allocChecking + allocSavings + allocStocks + allocIRA;
+        const monthlyAfterTax = afterTax / 12;
+        const allocatedPerc = monthlyAfterTax * (allocPercTotal / 100);
+        const allocatedHSA = allocHSA;
+        const unallocated = monthlyAfterTax - monthlyExpense - allocatedPerc - allocatedHSA;
+        
+        const unallocatedEl = document.getElementById('unallocatedAmount');
+        if (unallocatedEl) {
+            unallocatedEl.textContent = `$${unallocated.toLocaleString()}`;
+            unallocatedEl.className = `financial-value ${unallocated >= 0 ? 'status-positive' : 'status-negative'}`;
+        }
+    }
+
+    ['annual_salary','salary_after_tax_fraction','expense_percentage'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateSalaryExpenseFeedback);
+    });
+    ['allocation_checking','allocation_savings','allocation_stocks','allocation_ira','allocation_hsa_fixed'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateSalaryExpenseFeedback);
+    });
+
+    // Enhanced dynamic purchases/loans
+    let purchaseCount = 0;
+    function addPurchaseJS() {
+        purchaseCount++;
+        const container = document.getElementById('purchaseFields');
+        const div = document.createElement('div');
+        div.className = 'purchase-card';
+        div.id = `purchase_${purchaseCount}`;
+        div.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-white/80 font-medium">🏷️ Purchase Name</span>
+                    </label>
+                    <input type="text" placeholder="e.g., New Car, House" class="input input-premium" name="purchase_name_${purchaseCount}" />
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-white/80 font-medium">💰 Total Amount</span>
+                    </label>
+                    <input type="number" placeholder="Total cost" class="input input-premium" name="purchase_amount_${purchaseCount}" />
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-white/80 font-medium">💳 Payment Type</span>
+                    </label>
+                    <select class="select select-premium" name="purchase_type_${purchaseCount}" id="purchase_type_${purchaseCount}">
+                        <option value="cash">💵 Cash Payment</option>
+                        <option value="loan">🏦 Loan/Financing</option>
+                    </select>
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-white/80 font-medium">📅 Purchase Month</span>
+                    </label>
+                    <input type="number" placeholder="Month number (1-60)" class="input input-premium" name="purchase_month_${purchaseCount}" min="1" />
+                </div>
+            </div>
+            <div id="loanFieldsRow_${purchaseCount}" style="display:none;" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-white/80 font-medium">💸 Down Payment</span>
+                    </label>
+                    <input type="number" placeholder="Down payment amount" class="input input-premium" name="purchase_downpayment_${purchaseCount}" />
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-white/80 font-medium">📊 Interest Rate (%)</span>
+                    </label>
+                    <input type="number" placeholder="Annual rate (e.g., 5.5)" class="input input-premium" name="purchase_rate_${purchaseCount}" step="0.1" />
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-white/80 font-medium">⏰ Loan Term (months)</span>
+                    </label>
+                    <input type="number" placeholder="Loan duration" class="input input-premium" name="purchase_term_${purchaseCount}" />
+                </div>
+            </div>
+            <button type="button" class="btn btn-error w-full" onclick="removePurchaseJS(${purchaseCount})">
+                🗑️ Remove Purchase
+            </button>
+        `;
+        container.appendChild(div);
+        
+        // Enhanced loan fields toggle
+        const typeSelect = div.querySelector(`#purchase_type_${purchaseCount}`);
+        const loanFieldsRow = div.querySelector(`#loanFieldsRow_${purchaseCount}`);
+        function updateLoanFieldsRow() {
+            if (typeSelect.value === 'loan') {
+                loanFieldsRow.style.display = 'grid';
+                loanFieldsRow.style.animation = 'fadeInUp 0.3s ease-out';
+            } else {
+                loanFieldsRow.style.display = 'none';
+            }
+        }
+        typeSelect.addEventListener('change', updateLoanFieldsRow);
+        updateLoanFieldsRow();
+        
+        // Animate card entrance
+        div.style.opacity = '0';
+        div.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            div.style.transition = 'all 0.3s ease-out';
+            div.style.opacity = '1';
+            div.style.transform = 'translateY(0)';
+        }, 100);
+        
+        showToast('➕ Purchase/loan added successfully', 'success');
+    }
+
+    function removePurchaseJS(idx) {
+        const div = document.getElementById(`purchase_${idx}`);
+        if (div) {
+            div.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => div.remove(), 300);
+            showToast('🗑️ Purchase/loan removed', 'info');
+        }
+    }
+
+    // Enhanced form submission with loading state
+    document.getElementById('projectionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+        submitBtn.disabled = true;
+        
+        setTimeout(() => {
+            try {
+                const form = e.target;
+                const data = {};
+                Array.from(form.elements).forEach(el => {
+                    if (el.name && !el.name.startsWith('purchase_')) {
+                        if (el.type === 'checkbox') {
+                            data[el.name] = el.checked ? 1 : 0;
+                        } else {
+                            data[el.name] = parseFloat(el.value) || 0;
+                        }
+                    }
+                });
+                
+                // Gather purchases
+                const purchases = [];
+                for (let i = 1; i <= purchaseCount; i++) {
+                    const name = form[`purchase_name_${i}`]?.value;
+                    const amount = parseFloat(form[`purchase_amount_${i}`]?.value) || 0;
+                    const type = form[`purchase_type_${i}`]?.value;
+                    const downpayment = parseFloat(form[`purchase_downpayment_${i}`]?.value) || 0;
+                    const rate = parseFloat(form[`purchase_rate_${i}`]?.value) || 0;
+                    const term = parseFloat(form[`purchase_term_${i}`]?.value) || 0;
+                    const month = parseInt(form[`purchase_month_${i}`]?.value) || 1;
+                    if (name && amount) {
+                        purchases.push({ name, amount, type, downpayment, rate, term, month });
+                    }
+                }
+                
+                // --- Enhanced net worth projection logic ---
+                const months = data.months || 60;
+                let accountNames = ['Checking', 'Savings', 'Stocks', 'HSA', 'IRA', 'Others'];
+                let balances = {
+                    Checking: parseFloat(data.checking_balance) || 0,
+                    Savings: parseFloat(data.savings_balance) || 0,
+                    Stocks: parseFloat(data.stocks_balance) || 0,
+                    HSA: parseFloat(data.hsa_balance) || 0,
+                    IRA: parseFloat(data.ira_balance) || 0,
+                    Others: parseFloat(data.others_balance) || 0
+                };
+                
+                // Growth rates (configurable via form with sensible defaults)
+                let rates = {
+                    Checking: ((parseFloat(data.checking_rate_percent) || 1.0) / 100),    // 1% default
+                    Savings: ((parseFloat(data.savings_rate_percent) || 4.5) / 100),     // 4.5% default
+                    Stocks: ((parseFloat(data.stocks_return_percent) || 10.0) / 100),    // 10% default
+                    HSA: ((parseFloat(data.hsa_return_percent) || 7.0) / 100),          // 7% default
+                    IRA: ((parseFloat(data.ira_return_percent) || 9.0) / 100),          // 9% default
+                    Others: ((parseFloat(data.others_return_percent) || 0.0) / 100)     // user-controlled growth for Other Assets
+                };
+                
+                let compounding = {
+                    Checking: 'monthly',
+                    Savings: 'monthly',
+                    Stocks: 'monthly',
+                    HSA: 'monthly',
+                    IRA: 'monthly',
+                    Others: 'monthly'
+                };
+                
+                let currentAnnualSalary = parseFloat(data.annual_salary) || 0;
+                let otherIncome = parseFloat(data.other_income) || 0;
+                let afterTax = parseFloat(data.salary_after_tax_fraction) || 1.0;
+                let salaryRaisePercent = (parseFloat(data.salary_raise_percent) || 0) / 100.0;
+                let expensePercentage = (parseFloat(data.expense_percentage) || 0) / 100.0;
+                let allocChecking = (parseFloat(data.allocation_checking) || 0) / 100.0;
+                let allocSavings = (parseFloat(data.allocation_savings) || 0) / 100.0;
+                let allocStocks = (parseFloat(data.allocation_stocks) || 0) / 100.0;
+                let allocIRA = (parseFloat(data.allocation_ira) || 0) / 100.0;
+                let allocHSAFixed = parseFloat(data.allocation_hsa_fixed) || 0;
+                let employerHSAFixed = parseFloat(data.employer_hsa_monthly) || 0;
+                let employerIRAPercent = (parseFloat(data.employer_ira_percent) || 0) / 100.0;
+                let inflationAnnual = (parseFloat(data.inflation_rate_percent) || 0) / 100.0;
+                const inflationMonthly = inflationAnnual > 0 ? Math.pow(1 + inflationAnnual, 1/12) - 1 : 0;
+                let activeLoans = [];
+                let projection = [];
+                let cumulativeInflation = 1.0;
+                let totalEmployeeContribMonth = 0;
+                let totalEmployerContribMonth = 0;
+
+                // Helper: clamp allocation percentages to max 100%
+                const allocTotal = allocChecking + allocSavings + allocStocks + allocIRA;
+                if (allocTotal > 1) {
+                    const scale = 1 / allocTotal;
+                    allocChecking *= scale;
+                    allocSavings *= scale;
+                    allocStocks *= scale;
+                    allocIRA *= scale;
+                }
+
+                // Helper: cover deficit from liquid accounts (Checking -> Savings)
+                function coverDeficit(amount) {
+                    let remaining = amount;
+                    const take = (acc) => {
+                        const used = Math.min(balances[acc], remaining);
+                        balances[acc] -= used;
+                        remaining -= used;
+                    };
+                    take('Checking');
+                    if (remaining > 0) take('Savings');
+                    // If still remaining, leave as negative carry (no overdraft support) – do nothing further
+                }
+
+                // Compute initial net worth (before month 1 changes)
+                const initialAssets = accountNames.reduce((sum, acc) => sum + (balances[acc] || 0), 0);
+                const initialLoans = 0; // loans start when purchases are processed
+                const initialNetWorth = Math.round((initialAssets - initialLoans) * 100) / 100;
+                
+                for (let month = 0; month < months; month++) {
+                    // Annual raise
+                    if (month > 0 && month % 12 === 0) {
+                        currentAnnualSalary *= (1.0 + salaryRaisePercent);
+                    }
+                    
+                    // Monthly salary and expenses
+                    let monthlyGross = currentAnnualSalary / 12.0;
+                    let incomeMonth = monthlyGross * afterTax + (otherIncome / 12.0);
+                    let taxesMonth = monthlyGross * (1.0 - afterTax);
+                    let monthlySalary = incomeMonth;
+                    let expensesMonth = monthlySalary * expensePercentage;
+                    
+                    // Process purchases for this month
+                    let purchasesThisMonth = 0.0;
+                    if (!data.exclude_major_purchases) {
+                        purchases.forEach(p => {
+                            if (parseInt(p.month) === month + 1) {
+                                let price = parseFloat(p.amount) || 0;
+                                let isLoan = p.type === 'loan';
+                                let down = parseFloat(p.downpayment) || 0;
+                                
+                                purchasesThisMonth += price;
+
+                                if (isLoan) {
+                                    // Deduct downpayment from liquid accounts
+                                    let downRemaining = down;
+                                    if (balances.Checking >= downRemaining) {
+                                        balances.Checking -= downRemaining;
+                                    } else {
+                                        downRemaining -= balances.Checking;
+                                        balances.Checking = 0.0;
+                                        balances.Savings = Math.max(0.0, balances.Savings - downRemaining);
+                                    }
+
+                                    let loanInterest = (parseFloat(p.rate) || 0) / 100.0;
+                                    let loanTerm = parseInt(p.term) || 0;
+                                    let principal = price - down;
+                                    
+                                    if (loanInterest > 0 && loanTerm > 0 && principal > 0) {
+                                        let monthlyRate = Math.pow(1.0 + loanInterest, 1.0 / 12.0) - 1.0;
+                                        let emi = monthlyRate > 0 ? 
+                                            (principal * monthlyRate * Math.pow(1 + monthlyRate, loanTerm)) / 
+                                            (Math.pow(1 + monthlyRate, loanTerm) - 1) : 
+                                            principal / loanTerm;
+                                        
+                                        activeLoans.push({
+                                            type: p.name || 'Loan',
+                                            price,
+                                            down,
+                                            rate: loanInterest,
+                                            term: loanTerm,
+                                            emi,
+                                            remaining_principal: principal,
+                                            months_left: loanTerm,
+                                            start_month_index: month,
+                                            original_term: loanTerm
+                                        });
+                                    }
+                                } else {
+                                    // Cash purchase: deduct full price from Checking then Savings
+                                    let priceRemaining = price;
+                                    if (balances.Checking >= priceRemaining) {
+                                        balances.Checking -= priceRemaining;
+                                        priceRemaining = 0;
+                                    } else {
+                                        priceRemaining -= balances.Checking;
+                                        balances.Checking = 0.0;
+                                    }
+                                    if (priceRemaining > 0) {
+                                        balances.Savings = Math.max(0.0, balances.Savings - priceRemaining);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Filter out completed loans
+                    activeLoans = activeLoans.filter(l => l.months_left > 0 && l.remaining_principal > 0.005);
+                    
+                    // Calculate EMI payments
+                    let totalEmiPaidThisMonth = 0.0;
+                    let totalInterestPaidThisMonth = 0.0;
+                    
+                    activeLoans.forEach(loan => {
+                        if (month >= loan.start_month_index && loan.months_left > 0 && loan.remaining_principal > 0.005) {
+                            let annualRate = loan.rate || 0.0;
+                            let monthlyRate = annualRate > 0 ? Math.pow(1.0 + annualRate, 1.0 / 12.0) - 1.0 : 0.0;
+                            let interestForMonth = loan.remaining_principal * monthlyRate;
+                            let principalDue = loan.emi - interestForMonth;
+                            let principalPaid = 0.0;
+                            let actualPayment = 0.0;
+                            
+                            if (principalDue < 0) {
+                                principalPaid = 0.0;
+                                actualPayment = loan.emi;
+                            } else {
+                                if (principalDue >= loan.remaining_principal) {
+                                    principalPaid = loan.remaining_principal;
+                                    actualPayment = principalPaid + interestForMonth;
+                                    loan.remaining_principal = 0.0;
+                                    loan.months_left = 0;
+                                } else {
+                                    principalPaid = principalDue;
+                                    actualPayment = loan.emi;
+                                    loan.remaining_principal = Math.round((loan.remaining_principal - principalPaid) * 100) / 100;
+                                    loan.months_left = Math.max(0, loan.months_left - 1);
+                                }
+                            }
+                            
+                            totalEmiPaidThisMonth += actualPayment;
+                            totalInterestPaidThisMonth += interestForMonth;
+                        }
+                    });
+                    
+                    // Allocate remaining salary
+                    let salaryLeft = monthlySalary - expensesMonth - totalEmiPaidThisMonth;
+
+                    // Fixed HSA allocation (treated as cash outflow to HSA account)
+                    if (allocHSAFixed > 0) {
+                        balances.HSA += allocHSAFixed;
+                        salaryLeft -= allocHSAFixed;
+                    }
+
+                    // If deficit, cover from liquid accounts and stop further allocations
+                    if (salaryLeft < 0) {
+                        coverDeficit(-salaryLeft);
+                        salaryLeft = 0;
+                    }
+
+                    // Percentage allocations (only when positive leftover)
+                    if (salaryLeft > 0) {
+                        const toChecking = salaryLeft * allocChecking;
+                        const toSavings  = salaryLeft * allocSavings;
+                        const toStocks   = salaryLeft * allocStocks;
+                        const toIRA      = salaryLeft * allocIRA;
+                        const allocated  = toChecking + toSavings + toStocks + toIRA;
+                        const leftover   = Math.max(0, salaryLeft - allocated);
+
+                        // Route leftover to Checking so 'Others' remains constant
+                        balances.Checking += toChecking + leftover;
+                        balances.Savings  += toSavings;
+                        balances.Stocks   += toStocks;
+                        balances.IRA      += toIRA;
+                    }
+                    
+                    // Employer contributions
+                    balances.HSA += employerHSAFixed;
+                    balances.IRA += monthlyGross * employerIRAPercent;
+                    totalEmployerContribMonth = employerHSAFixed + (monthlyGross * employerIRAPercent);
+                    
+                    // Apply growth rates
+                    let interestByAccount = {};
+                    accountNames.forEach(acc => {
+                        let rate = rates[acc] || 0.0;
+                        let compType = compounding[acc] || 'monthly';
+                        let interest = 0.0;
+                        
+                        if (compType === 'monthly') {
+                            let monthlyRate = Math.pow(1.0 + rate, 1.0 / 12.0) - 1.0;
+                            interest = balances[acc] * monthlyRate;
+                        } else if (compType === 'quarterly') {
+                            if ((month + 1) % 3 === 0) {
+                                let periodRate = Math.pow(1.0 + rate, 3.0 / 12.0) - 1.0;
+                                interest = balances[acc] * periodRate;
+                            }
+                        } else if (compType === 'annually') {
+                            if ((month + 1) % 12 === 0) {
+                                let periodRate = rate;
+                                interest = balances[acc] * periodRate;
+                            }
+                        }
+                        
+                        balances[acc] += interest;
+                        balances[acc] = Math.round(balances[acc] * 100) / 100;
+                        interestByAccount[acc] = Math.round(interest * 100) / 100;
+                    });
+                    
+                    // Track employee contributions for this month (money directed into accounts from salary)
+                    totalEmployeeContribMonth = 0;
+                    totalEmployeeContribMonth += Math.max(0, salaryLeft) * allocChecking; // portion into Checking
+                    totalEmployeeContribMonth += Math.max(0, salaryLeft) * allocSavings;  // portion into Savings
+                    totalEmployeeContribMonth += Math.max(0, salaryLeft) * allocStocks;   // portion into Stocks
+                    totalEmployeeContribMonth += Math.max(0, salaryLeft) * allocIRA;      // portion into IRA
+                    totalEmployeeContribMonth += Math.max(0, allocHSAFixed);              // fixed HSA from employee
+
+                    // Calculate net worth
+                    let nominalAssets = accountNames.reduce((sum, acc) => sum + balances[acc], 0);
+                    let totalLoanBalance = activeLoans.reduce((sum, l) => sum + l.remaining_principal, 0);
+                    let netWorthNominal = nominalAssets - totalLoanBalance;
+                    cumulativeInflation *= (1 + inflationMonthly);
+                    let netWorthReal = cumulativeInflation > 0 ? (netWorthNominal / cumulativeInflation) : netWorthNominal;
+                    
+                    projection.push({
+                        month: month + 1,
+                        netWorth: netWorthNominal,
+                        netWorthReal: netWorthReal,
+                        balances: {...balances},
+                        salary: monthlySalary,
+                        expenses: expensesMonth,
+                        loans: totalLoanBalance,
+                        emi: totalEmiPaidThisMonth,
+                        interest: totalInterestPaidThisMonth,
+                        purchases: purchasesThisMonth,
+                        interestByAccount: {...interestByAccount},
+                        employeeContrib: totalEmployeeContribMonth,
+                        employerContrib: totalEmployerContribMonth
+                    });
+                }
+                
+                // Update header with enhanced formatting
+                const currentNetWorth = initialNetWorth;
+                const projectedNetWorth = projection[months-1].netWorth;
+                const growth = projectedNetWorth - currentNetWorth;
+                const growthPercent = currentNetWorth > 0 ? ((growth / currentNetWorth) * 100) : 0;
+                
+                document.getElementById('navCurrentNetWorth').textContent = `$${currentNetWorth.toLocaleString()}`;
+                document.getElementById('navProjectedNetWorth').textContent = `$${projectedNetWorth.toLocaleString()}`;
+                
+                // Enhanced chart rendering with beautiful styling
+                const labels = projection.map(p => `Month ${p.month}`);
+                const netWorths = projection.map(p => p.netWorth);
+                const netWorthsReal = projection.map(p => p.netWorthReal);
+                
+                // Destroy existing charts if they exist
+                ['chartNetWorth', 'chartBreakdown', 'chartLoans', 'chartCashFlow', 'chartContrib'].forEach(id => {
+                    const chart = Chart.getChart(id);
+                    if (chart) chart.destroy();
+                });
+                
+                // Net Worth Chart with gradient
+                const ctxNetWorth = document.getElementById('chartNetWorth').getContext('2d');
+                const gradientNetWorth = ctxNetWorth.createLinearGradient(0, 0, 0, 400);
+                gradientNetWorth.addColorStop(0, 'rgba(59, 130, 246, 0.8)');
+                gradientNetWorth.addColorStop(1, 'rgba(59, 130, 246, 0.1)');
+                const gradientNetWorthReal = ctxNetWorth.createLinearGradient(0, 0, 0, 400);
+                gradientNetWorthReal.addColorStop(0, 'rgba(16, 185, 129, 0.8)');
+                gradientNetWorthReal.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
+                
+                const chartNetWorth = new Chart(ctxNetWorth, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Net Worth (Nominal)',
+                                data: netWorths,
+                                borderColor: '#3B82F6',
+                                backgroundColor: gradientNetWorth,
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#3B82F6',
+                                pointBorderColor: '#FFFFFF',
+                                pointBorderWidth: 2,
+                                pointRadius: 2,
+                                pointHoverRadius: 4
+                            },
+                            {
+                                label: 'Net Worth (Inflation-Adjusted)',
+                                data: netWorthsReal,
+                                borderColor: '#10B981',
+                                backgroundColor: gradientNetWorthReal,
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.4,
+                                pointBackgroundColor: '#10B981',
+                                pointBorderColor: '#FFFFFF',
+                                pointBorderWidth: 1,
+                                pointRadius: 2,
+                                pointHoverRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2, /* width / height */
+                        resizeDelay: 150,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#F1F5F9', font: { family: 'Inter', weight: '600' } }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleColor: '#F1F5F9',
+                                bodyColor: '#F1F5F9',
+                                borderColor: '#3B82F6',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#94A3B8', font: { family: 'Inter' } },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            y: {
+                                ticks: { 
+                                    color: '#94A3B8',
+                                    font: { family: 'Inter' },
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            }
+                        }
+                    }
+                });
+                
+                // Account Breakdown Chart
+                const ctxBreakdown = document.getElementById('chartBreakdown').getContext('2d');
+                const accountColors = {
+                    'Checking': '#3B82F6',
+                    'Savings': '#10B981',
+                    'Stocks': '#8B5CF6',
+                    'HSA': '#F59E0B',
+                    'IRA': '#EF4444',
+                    'Others': '#6B7280'
+                };
+                
+                const chartBreakdown = new Chart(ctxBreakdown, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: Object.keys(balances).map(acc => ({
+                            label: acc,
+                            data: projection.map(p => p.balances[acc]),
+                            borderColor: accountColors[acc],
+                            backgroundColor: accountColors[acc] + '20',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        resizeDelay: 150,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#F1F5F9', font: { family: 'Inter', weight: '600' } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#94A3B8', font: { family: 'Inter' } },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            y: {
+                                ticks: { 
+                                    color: '#94A3B8',
+                                    font: { family: 'Inter' },
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            }
+                        }
+                    }
+                });
+                
+                // Loan Balances Chart
+                const ctxLoans = document.getElementById('chartLoans').getContext('2d');
+                const gradientLoans = ctxLoans.createLinearGradient(0, 0, 0, 400);
+                gradientLoans.addColorStop(0, 'rgba(239, 68, 68, 0.8)');
+                gradientLoans.addColorStop(1, 'rgba(239, 68, 68, 0.1)');
+                
+                const chartLoans = new Chart(ctxLoans, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Total Loan Balance',
+                            data: projection.map(p => p.loans),
+                            borderColor: '#EF4444',
+                            backgroundColor: gradientLoans,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        resizeDelay: 150,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#F1F5F9', font: { family: 'Inter', weight: '600' } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#94A3B8', font: { family: 'Inter' } },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            y: {
+                                ticks: { 
+                                    color: '#94A3B8',
+                                    font: { family: 'Inter' },
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            }
+                        }
+                    }
+                });
+                
+                // Cash Flow Chart
+                const ctxCashFlow = document.getElementById('chartCashFlow').getContext('2d');
+                const chartCashFlow = new Chart(ctxCashFlow, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Monthly Income',
+                                data: projection.map(p => p.salary),
+                                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                                borderColor: '#10B981',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Monthly Expenses',
+                                data: projection.map(p => p.expenses),
+                                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                                borderColor: '#EF4444',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Loan Payments',
+                                data: projection.map(p => p.emi),
+                                backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                                borderColor: '#F59E0B',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        resizeDelay: 150,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#F1F5F9', font: { family: 'Inter', weight: '600' } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#94A3B8', font: { family: 'Inter' } },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            y: {
+                                ticks: { 
+                                    color: '#94A3B8',
+                                    font: { family: 'Inter' },
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            }
+                        }
+                    }
+                });
+
+                // Ensure containers are clamped to their parent clientWidth after render
+                const clampContainers = () => {
+                    ['chartNetWorth','chartBreakdown','chartLoans','chartCashFlow'].forEach(id => {
+                        const canvas = document.getElementById(id);
+                        if (!canvas) return;
+                        const card = canvas.closest('.chart-container');
+                        if (!card) return;
+                        const parent = card.parentElement;
+                        if (!parent) return;
+                        const pw = parent.clientWidth;
+                        card.style.maxWidth = pw + 'px';
+                        card.style.width = '100%';
+                        card.style.overflowX = 'clip';
+                    });
+                };
+                clampContainers();
+
+                // Resize charts on window resize to keep within container bounds
+
+                // Contributions Chart
+                const ctxContrib = document.getElementById('chartContrib').getContext('2d');
+                const chartContrib = new Chart(ctxContrib, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Employee Contributions',
+                                data: projection.map(p => p.employeeContrib),
+                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                                borderColor: '#3B82F6',
+                                borderWidth: 1,
+                                stack: 'contrib'
+                            },
+                            {
+                                label: 'Employer Contributions',
+                                data: projection.map(p => p.employerContrib),
+                                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                                borderColor: '#10B981',
+                                borderWidth: 1,
+                                stack: 'contrib'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        resizeDelay: 150,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#F1F5F9', font: { family: 'Inter', weight: '600' } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: { color: '#94A3B8', font: { family: 'Inter' } },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            y: {
+                                stacked: true,
+                                ticks: { 
+                                    color: '#94A3B8',
+                                    font: { family: 'Inter' },
+                                    callback: function(value) { return '$' + Number(value).toLocaleString(); }
+                                },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            }
+                        }
+                    }
+                });
+                // Install a single resize listener (debounced) per page
+                if (window.__nw_resizeHandler) {
+                    window.removeEventListener('resize', window.__nw_resizeHandler);
+                }
+                let __resizeTO;
+                window.__nw_resizeHandler = function() {
+                    if (__resizeTO) clearTimeout(__resizeTO);
+                    __resizeTO = setTimeout(() => {
+                        chartNetWorth.resize();
+                        chartBreakdown.resize();
+                        chartLoans.resize();
+                        chartCashFlow.resize();
+                        clampContainers();
+                    }, 100);
+                };
+                window.addEventListener('resize', window.__nw_resizeHandler, { passive: true });
+                
+                // Success notification
+                showToast(`🚀 Projection complete! Net worth growth: $${growth.toLocaleString()} (${growthPercent.toFixed(1)}%)`, 'success');
+                
+            } catch (error) {
+                console.error('Calculation error:', error);
+                showToast('❌ Error calculating projection. Please check your inputs.', 'error');
+            } finally {
+                // Restore button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }, 1000); // Simulate processing time
+    });
+
+    // Add CSS for fade out animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.95); }
+        }
+    `;
+    document.head.appendChild(style);
+    </script>
+</body>
+</html>
